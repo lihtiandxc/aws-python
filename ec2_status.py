@@ -1,3 +1,5 @@
+#This sample is showing how to process Response output
+
 import boto3
 import os
 
