@@ -1,5 +1,3 @@
-#This lambda function print all the instances from single asg
-
 import boto3
 import os
 
@@ -10,10 +8,14 @@ def lambda_handler(event, context):
     # TODO implement
     
     response = asg_client.describe_auto_scaling_instances()
-    i = 0
-    for n in response:
-        auto_scaling_instance = response['AutoScalingInstances'][i]['InstanceId']
-        i = i + 1
-        print(auto_scaling_instance)
+    auto_scaling_instances = response['AutoScalingInstances'] #Return a List
+    enum_auto_scaling_instances = list(enumerate(auto_scaling_instances)) # enumerate is python build in function : https://docs.python.org/3/library/functions.html#enumerate
+  
+    #print(enum_auto_scaling_instances)
+    
+    total_instances = len(auto_scaling_instances) # count the item in a List
+    
+    for index, elem in enum_auto_scaling_instances:
+        print(index, elem['InstanceId'])
         
     return 'Complete'
