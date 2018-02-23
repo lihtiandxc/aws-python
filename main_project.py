@@ -3,11 +3,14 @@ import os
 
 
 auto_scaling_grp_name = os.environ['asg_name']
+cloudtrail_event_network_id = os.environ['cloudtrail_nw_id']
 asg_client = boto3.client('autoscaling')
 ec2_client = boto3.client('ec2')
 
     
 def desc_asg_instance():
+    
+    list_nw_id = [] #Initialize the empty to capture multiple return values
     
     response = asg_client.describe_auto_scaling_instances()
     auto_scaling_instances = response['AutoScalingInstances'] #Return a List
@@ -27,19 +30,29 @@ def desc_asg_instance():
         #print(ec2_details)
         #print(ec2_nw_interface)
         print('This is the ec2 ' + ec2_instance_id + ' interface id = ' + ec2_nw_int_id)
+        list_nw_id.append(ec2_nw_int_id)
         
-        
+    return list_nw_id  #This will return a List instead of single value.
 
-def desc_ec2_nw_interface(nw_id):
-    
-    response = ec2_client.describe_network_interface_attribute(Attribute = 'attachment', NetworkInterfaceId = nw_id)
-#    print(response)
-    
+def checking_nw_id(nw_ids):
 
+   #print(nw_ids)
+   
+   for nw_id in nw_ids:
+        if nw_id == cloudtrail_event_network_id:
+           # TODO: write code...
+           print('This nw interface has relationship with ASG instance' + nw_id)
+           return
+        else:
+           print('This nw interface has nothing to do with ASG instance' + nw_id)
+           
+    
+    
 def lambda_handler(event, context):
     # TODO implement
+    returned_values = desc_asg_instance()
+    checking_nw_id(returned_values)
+    #print(returned_values)
 
-    desc_asg_instance()
-    #desc_ec2_nw_interface()
 
     return 'Complete'
