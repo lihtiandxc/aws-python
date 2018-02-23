@@ -1,0 +1,65 @@
+ {
+     
+     "version": "0", 
+     "id": "cff2b78a-ec2d-1620-0041-5d34462e8695", 
+     "detail-type": "AWS API Call via CloudTrail", 
+     "source": "aws.ec2", 
+     "account": "", 
+     "time": "2018-02-23T16:22:19Z", 
+     "region": "us-east-1", 
+     "resources": [], 
+     "detail": {
+         "eventVersion": "1.05", 
+         "userIdentity": {
+             "type": "IAMUser", 
+             "principalId": "", 
+             "arn": "", 
+             "accountId": "", 
+             "accessKeyId": "", 
+             "userName": "", 
+             "sessionContext": {
+                 "attributes": {
+                     "mfaAuthenticated": "true", 
+                     "creationDate": "2018-02-23T15:40:34Z"}
+                 
+             }, 
+             "invokedBy": "signin.amazonaws.com"
+             
+         },
+        "eventTime": "2018-02-23T16:22:19Z", 
+        "eventSource": "ec2.amazonaws.com", 
+        "eventName": "ModifyNetworkInterfaceAttribute", 
+        "awsRegion": "us-east-1", 
+        "sourceIPAddress": "121.121.58.157", 
+        "userAgent": "signin.amazonaws.com", 
+        "requestParameters": {
+            "networkInterfaceId": "eni-1f4c8ce5", 
+            "groupSet": {
+                "items": [
+                    {
+                        "groupId": "sg-28d2e85d"
+                        
+                    }, 
+                    {
+                        "groupId": "sg-352d1542"
+                        
+                    }, 
+                    {
+                        "groupId": "sg-af9091da"
+                        
+                    }
+                    ]
+                
+                }
+            
+            }, 
+        "responseElements": {
+            "_return": "True"
+            
+            }, 
+        "requestID": "c9c6bb20-9414-404e-9de3-973de56b6463", 
+        "eventID": "874e9bea-0c7b-4adc-bb0c-77607185de11", "eventType": "AwsApiCall"
+         
+     }
+     
+ }
