@@ -1,35 +1,35 @@
 {
-	'version': '0',
-	'id': '1a41ce24-d550-bb93-9680-2afcf2a7c476', 
-	'detail-type': 'AWS API Call via CloudTrail', 
-	'source': 'aws.ec2', 
-	'account': '', 
-	'time': '2018-02-24T14:45:26Z', 
-	'region': 'us-east-1', 
-	'resources': [], 
-	'detail': {
-		'eventVersion': '1.05', 
-		'userIdentity': {
-			'type': 'IAMUser', 
-			'principalId': '', 
-			'arn': '', 
-			'accountId': '', 
-			'accessKeyId': 'abcdefghijklmnopq', 	
-			'userName': 'yourname', 
-			'sessionContext': {
-				'attributes': {
-					'mfaAuthenticated': 'true', 
-					'creationDate': '2018-02-24T12:28:09Z'
+	"version": "0",
+	"id": "1a41ce24-d550-bb93-9680-2afcf2a7c476", 
+	"detail-type": "AWS API Call via CloudTrail", 
+	"source": "aws.ec2", 
+	"account": "", 
+	"time": "2018-02-24T14:45:26Z", 
+	"region": "us-east-1", 
+	"resources": [], 
+	"detail": {
+		"eventVersion": "1.05", 
+		"userIdentity": {
+			"type": "IAMUser", 
+			"principalId": "", 
+			"arn": "", 
+			"accountId": "", 
+			"accessKeyId": "abcdefghijklmnopq", 	
+			"userName": "yourname", 
+			"sessionContext": {
+				"attributes": {
+					"mfaAuthenticated": "true", 
+					"creationDate": "2018-02-24T12:28:09Z"
 						}
 					}, 
-				'invokedBy': 'signin.amazonaws.com'
+				"invokedBy": "signin.amazonaws.com"
 				}, 
-		'eventTime': '2018-02-24T14:45:26Z', 
-		'eventSource': 'ec2.amazonaws.com', 
-		'eventName': 'AuthorizeSecurityGroupIngress', 
-		'awsRegion': 'us-east-1', 
-		'sourceIPAddress': '121.121.62.123', 
-		'userAgent': 'signin.amazonaws.com', 
+		"eventTime": "2018-02-24T14:45:26Z", 
+		"eventSource": "ec2.amazonaws.com", 
+		"eventName": "AuthorizeSecurityGroupIngress", 
+		"awsRegion": "us-east-1", 
+		"sourceIPAddress": "121.121.62.123", 
+		"userAgent": "signin.amazonaws.com", 
 		    "requestParameters": {
         		"groupId": "sg-9ba7c2ec",
         		"ipPermissions": {
