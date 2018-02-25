@@ -1,3 +1,8 @@
+###------- Author : lih-tian.lim@dxc.com
+###------- Version : 1.0
+###------- Title : Function to trigger email notification whenever any security group
+###-------         attach/detach activity on Instances
+
 from datetime import datetime
 import boto3
 import json
@@ -16,8 +21,13 @@ LOGGER.setLevel(logging.INFO)
 
 ###------- 
 #event_network_id = 'eni-c0614e3d'  #simulate event passing nw id string
-str_asg_name = 'limliht-asg,limliht2-asg' #simulate global var in lambda
-global_asg_name = str_asg_name.split(',')
+#str_asg_name = 'limliht-asg,limliht2-asg' #simulate global var in lambda
+#global_asg_name = str_asg_name.split(',')
+service_tag_name = 'Service'
+service_tag = 'account'
+env_tag_name = 'Env'
+env_tag = 'production'
+
 sns_topic_arn = 'arn:aws:sns:us-east-1:751611215147:limliht_topic2'
 
 ###-------
@@ -39,18 +49,16 @@ def get_instance_tag(ec2_id):
     tagging = instance.tags
     
     for value in tagging:
-        if value['Value'] == 'Production':
-            for asg_value in tagging:
-                if asg_value['Key'] == 'aws:autoscaling:groupName':
-                    for asg in global_asg_name:
-                        if asg_value['Value'] == asg:
+        if value['Key'] == env_tag_name and value['Value'] == env_tag:
+            for instance_value in tagging:
+                if instance_value['Key'] == service_tag_name \
+                and instance_value['Value'] == service_tag :
                     
-                            get_instance_tag_result = 'EC2 ' + asg_value['Value'] + \
-                            ' with instance id ' +  ec2_id
+                    get_instance_tag_result = instance_value['Value'].upper() + 'PF EC2 ' + \
+                    ' with instance id ' +  ec2_id
+                    print(get_instance_tag_result)
                     
-                            return get_instance_tag_result
-                        else:
-                            pass
+                    return get_instance_tag_result
                 else:
                     pass
         else:
@@ -60,45 +68,40 @@ def get_instance_tag(ec2_id):
 def sns_result(e, ec2_details, network_id):
 
         
-        details = e['detail']['eventName']
-        #network_id = e['detail']['requestParameters']['networkInterfaceId']
-        accesskey_id =  e['detail']['userIdentity']['accessKeyId']
-        username = e['detail']['userIdentity']['userName']
-        event_id = e['detail']['eventID']
-        aws_region = e['detail']['awsRegion']
-        source_ip =  e['detail']['sourceIPAddress']
-        user_agent = e['detail']['userAgent']
-        parameters = e['detail']['requestParameters']['groupSet']['items']
-        sg_parameters = json.dumps(parameters)
+    details = e['detail']['eventName']
+    accesskey_id =  e['detail']['userIdentity']['accessKeyId']
+    username = e['detail']['userIdentity']['userName']
+    event_id = e['detail']['eventID']
+    aws_region = e['detail']['awsRegion']
+    source_ip =  e['detail']['sourceIPAddress']
+    user_agent = e['detail']['userAgent']
+    parameters = e['detail']['requestParameters']['groupSet']['items']
+    sg_parameters = json.dumps(parameters)
 
-        str_e = json.dumps(e)
-        str_e_data = json.loads(str_e)
-        event_time_json = str_e_data['detail']['eventTime']
-        event_time_datetime_format = str(datetime.strptime(event_time_json, '%Y-%m-%dT%H:%M:%SZ'))
+    str_e = json.dumps(e)
+    str_e_data = json.loads(str_e)
+    event_time_json = str_e_data['detail']['eventTime']
+    event_time_datetime_format = str(datetime.strptime(event_time_json, '%Y-%m-%dT%H:%M:%SZ'))
         
-        construct_msg = 'Event log: \
-        \n\nEvent name : ' + details + \
-        '\nEvent Id : ' + event_id + \
-        '\nEvent time (UTC) : ' + event_time_datetime_format + \
-        '\nUser Access Key : ' + accesskey_id + \
-        '\nUsername : ' + username + \
-        '\nAWS Region : ' + aws_region + \
-        '\nSource IP : ' + source_ip + \
-        '\nUser agent : ' + user_agent + \
-        '\nSecurity Group information : ' + sg_parameters
+    construct_msg = 'Event log: \
+    \n\nEvent name : ' + details + \
+    '\nEvent Id : ' + event_id + \
+    '\nEvent time (UTC) : ' + event_time_datetime_format + \
+    '\nUser Access Key : ' + accesskey_id + \
+    '\nUsername : ' + username + \
+    '\nAWS Region : ' + aws_region + \
+    '\nSource IP : ' + source_ip + \
+    '\nUser agent : ' + user_agent + \
+    '\nSecurity Group information : ' + sg_parameters
 
-       
-
-        if details == 'ModifyNetworkInterfaceAttribute':
-            event_json = json.dumps(e)
-            subject_msg = 'Security Group has changed on this '+ ec2_details
-            #sns_client.publish(TargetArn = sns_topic_arn, MessageStructure = 'json', \
-            #Message = json.dumps({'default' : event_json}), Subject = subject_msg)
-            sns_client.publish(TargetArn = sns_topic_arn, MessageStructure = 'string', \
-            Message = construct_msg, Subject = subject_msg)
+    if details == 'ModifyNetworkInterfaceAttribute':
+        event_json = json.dumps(e)
+        subject_msg = 'Security Group has changed on this '+ ec2_details
+        sns_client.publish(TargetArn = sns_topic_arn, MessageStructure = 'string', \
+        Message = construct_msg, Subject = subject_msg)
     
-        else:
-            pass
+    else:
+        pass
 
 ###-------
 def lambda_handler(event, context):
