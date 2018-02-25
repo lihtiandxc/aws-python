@@ -28,7 +28,7 @@ service_tag = 'account'
 env_tag_name = 'Env'
 env_tag = 'production'
 
-sns_topic_arn = 'arn:aws:sns:us-east-1:751611215147:limliht_topic2'
+sns_topic_arn = ''
 
 ###-------
 ec2_resource = boto3.resource('ec2')
