@@ -9,7 +9,7 @@ sns_client = boto3.client('sns')
 #str_asg_name = 'limliht-asg,limliht2-asg' #simulate global var in lambda
 #global_asg_name = str_asg_name.split(',')
 
-accountpf_sg_list = []
+sg_list = []
 sns_topic_arn = ''
 
 def construct_sns_msg(e):
