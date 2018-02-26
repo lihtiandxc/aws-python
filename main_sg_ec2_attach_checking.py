@@ -8,6 +8,7 @@ import boto3
 import json
 import logging
 import sys
+import os
 
 LOGGER = logging.getLogger()
 for h in LOGGER.handlers:
@@ -19,18 +20,19 @@ HANDLER.setFormatter(logging.Formatter(FORMAT))
 LOGGER.addHandler(HANDLER)
 LOGGER.setLevel(logging.INFO)
 
-###------- 
-#event_network_id = 'eni-c0614e3d'  #simulate event passing nw id string
+###-------Global Var can be defined in Lambda global var and import with os.environ() method
 #str_asg_name = 'limliht-asg,limliht2-asg' #simulate global var in lambda
 #global_asg_name = str_asg_name.split(',')
 service_tag_name = 'Service'
 service_tag = 'account'
 env_tag_name = 'Env'
-env_tag = 'production'
-
+env_tag = 'Production'
+country_tag_name = 'Country'
+country_tag_value = 'US'
+accountpf_sg_list = []
 sns_topic_arn = ''
 
-###-------
+###-------Initialize the boto3 sdk
 ec2_resource = boto3.resource('ec2')
 sns_client = boto3.client('sns')
 
@@ -48,17 +50,25 @@ def get_instance_tag(ec2_id):
     instance = ec2_resource.Instance(ec2_id)
     tagging = instance.tags
     
-    for value in tagging:
-        if value['Key'] == env_tag_name and value['Value'] == env_tag:
-            for instance_value in tagging:
-                if instance_value['Key'] == service_tag_name \
-                and instance_value['Value'] == service_tag :
-                    
-                    get_instance_tag_result = instance_value['Value'].upper() + 'PF EC2 ' + \
-                    ' with instance id ' +  ec2_id
-                    print(get_instance_tag_result)
-                    
-                    return get_instance_tag_result
+    for country_value in tagging:
+        if country_value['Key'] == country_tag_name and country_value['Value'] == country_tag_value:
+            for env_value in tagging:
+                if env_value['Key'] == env_tag_name and env_value['Value'] == env_tag:
+                    for service_value in tagging:
+                        if service_value['Key'] == service_tag_name \
+                        and service_value['Value'] == service_tag :
+                            for name_value in tagging:
+                                if name_value['Key'] == 'Name':
+                                    name_ec2 = name_value['Value']
+                                else:
+                                    pass
+                            
+                            get_instance_tag_result = service_value['Value'].upper() + ' platform EC2' + \
+                            ' with instance id "' +  ec2_id + '" and Instance name "' + name_ec2 + '"'
+                            print(get_instance_tag_result)
+                            return get_instance_tag_result
+                        else:
+                            pass
                 else:
                     pass
         else:
@@ -67,7 +77,7 @@ def get_instance_tag(ec2_id):
 ###-------                    
 def sns_result(e, ec2_details, network_id):
 
-        
+    #Accessing the value of "e" cloudtrail event    
     details = e['detail']['eventName']
     accesskey_id =  e['detail']['userIdentity']['accessKeyId']
     username = e['detail']['userIdentity']['userName']
@@ -76,14 +86,26 @@ def sns_result(e, ec2_details, network_id):
     source_ip =  e['detail']['sourceIPAddress']
     user_agent = e['detail']['userAgent']
     parameters = e['detail']['requestParameters']['groupSet']['items']
-    sg_parameters = json.dumps(parameters)
-
+    # The iteration method below help to access value of the list
+    sg_parameters_list = [i['groupId'] for i in parameters if 'groupId' in i]
+    sg_parameters = json.dumps(sg_parameters_list)
+    
+    #Looking for illegal securty group
+    illegal_sg = []
+    for sg in sg_parameters_list:
+        if sg not in accountpf_sg_list:
+            illegal_sg.append(sg)
+    
+    #Accessing element time from Event has retuned key error
+    #Solution, transform the Event json to String and re-transform back to json
     str_e = json.dumps(e)
     str_e_data = json.loads(str_e)
     event_time_json = str_e_data['detail']['eventTime']
+    #Transform the JSON time format to datetime format
     event_time_datetime_format = str(datetime.strptime(event_time_json, '%Y-%m-%dT%H:%M:%SZ'))
-        
-    construct_msg = 'Event log: \
+    
+    #Constructing message for SNS    
+    construct_msg = 'Event summary: \
     \n\nEvent name : ' + details + \
     '\nEvent Id : ' + event_id + \
     '\nEvent time (UTC) : ' + event_time_datetime_format + \
@@ -91,19 +113,20 @@ def sns_result(e, ec2_details, network_id):
     '\nUsername : ' + username + \
     '\nAWS Region : ' + aws_region + \
     '\nSource IP : ' + source_ip + \
-    '\nUser agent : ' + user_agent + \
-    '\nSecurity Group information : ' + sg_parameters
+    '\nAll Security Group attached on this instance : ' + sg_parameters + \
+    '\nNon Account Security Group attached on this instance : ' + json.dumps(illegal_sg) + \
+    '\n\n\n' + 'Raw event: ' + \
+    '\n\n' + str_e
 
+    #Publish SNS topic
     if details == 'ModifyNetworkInterfaceAttribute':
         event_json = json.dumps(e)
-        subject_msg = 'Security Group has changed on this '+ ec2_details
         sns_client.publish(TargetArn = sns_topic_arn, MessageStructure = 'string', \
-        Message = construct_msg, Subject = subject_msg)
-    
+        Message = construct_msg, Subject = ec2_details)
     else:
         pass
 
-###-------
+###-------Main function
 def lambda_handler(event, context):
     # TODO implement
     
