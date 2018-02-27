@@ -9,7 +9,9 @@ sns_client = boto3.client('sns')
 #str_asg_name = 'limliht-asg,limliht2-asg' #simulate global var in lambda
 #global_asg_name = str_asg_name.split(',')
 
-sg_list = []
+accountpf_sg_list = ['sg-fbdec','sg-9ba7','sg-352d']
+accountpf_sg_name = ['Prod_sg_mante','Monitor','Stag_account']
+combine_sg_list = dict(zip(accountpf_sg_name,accountpf_sg_list)) #why not using dict instead? This design is to fit AWS lambda global var input
 sns_topic_arn = ''
 
 def construct_sns_msg(e):
@@ -30,12 +32,17 @@ def construct_sns_msg(e):
     #Transform the JSON time format to datetime format
     event_time_datetime_format = str(datetime.strptime(event_time_json, '%Y-%m-%dT%H:%M:%SZ'))
     
-    rules = normalize_paramter_names(ip_permissions['items'])
+    #Searching group name based on group id
+    for sg_name, sg_id in combine_sg_list.items():
+        if sg_id == group_id:
+            group_name = sg_name
+            #return sg_name
     
     body_msg = 'Event summary: \
     \n\nEvent name : ' + event_name + \
+    '\nSecurity Group Name : ' + group_name + \
     '\nSecurity Group ID : ' + group_id + \
-    '\nChange Items : ' + json.dumps(rules) + \
+    '\nChange Items : ' + json.dumps(ip_permissions['items']) + \
     '\nEvent Id : ' + event_id + \
     '\nEvent time (UTC) : ' + event_time_datetime_format + \
     '\nUser Access Key : ' + accesskey_id + \
@@ -45,7 +52,7 @@ def construct_sns_msg(e):
     '\n\n\n' + 'Raw event: ' + \
     '\n\n' + str_e 
     
-    subject_msg = 'Account Platform Security Group({}) Rules Changes'.format(group_id)
+    subject_msg = 'Account Platform Security Group ({}) Rules Changes'.format(group_id)
     trigger_notification(body_msg, subject_msg)
 
 def trigger_notification(event_detail, subject):
@@ -53,45 +60,6 @@ def trigger_notification(event_detail, subject):
     sns_client.publish(TargetArn = sns_topic_arn, MessageStructure = 'string', \
     Message = event_detail, Subject = subject)
 
-def normalize_paramter_names(ip_items):
-    # Start building the permissions items list.
-    new_ip_items = []
-
-    # First, build the basic parameter list.
-    for ip_item in ip_items:
-
-        new_ip_item = {
-            "IpProtocol": ip_item['ipProtocol'],
-            "FromPort": ip_item['fromPort'],
-            "ToPort": ip_item['toPort']
-        }
-
-        # CidrIp or CidrIpv6 (IPv4 or IPv6)?
-        if 'ipv6Ranges' in ip_item and ip_item['ipv6Ranges']:
-            # This is an IPv6 permission range, so change the key names.
-            ipv_range_list_name = 'ipv6Ranges'
-            ipv_address_value = 'cidrIpv6'
-            ipv_range_list_name_capitalized = 'Ipv6Ranges'
-            ipv_address_value_capitalized = 'CidrIpv6'
-        else:
-            ipv_range_list_name = 'ipRanges'
-            ipv_address_value = 'cidrIp'
-            ipv_range_list_name_capitalized = 'IpRanges'
-            ipv_address_value_capitalized = 'CidrIp'
-
-        ip_ranges = []
-
-        # Next, build the IP permission list.
-        for item in ip_item[ipv_range_list_name]['items']:
-            ip_ranges.append(
-                {ipv_address_value_capitalized: item[ipv_address_value]}
-            )
-
-        new_ip_item[ipv_range_list_name_capitalized] = ip_ranges
-
-        new_ip_items.append(new_ip_item)
-
-    return new_ip_items
     
 def lambda_handler(event, context):
     # TODO implement
