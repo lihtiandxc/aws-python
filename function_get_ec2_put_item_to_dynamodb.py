@@ -27,8 +27,9 @@ def get_account_ec2_list():
             ec2_name = next(item for item in each_account_ec2_id['Tags'] if item['Key'] == 'Name')
             #print(ec2_name['Value'])
             construct_ec2_dict = {}
-            construct_ec2_dict['EC2'] = ec2_id
-            construct_ec2_dict['EC2Name'] = ec2_name['Value']
+            construct_ec2_dict['id'] = ec2_id
+            construct_ec2_dict['name'] = ec2_name['Value']
+            construct_ec2_dict['resource'] = 'ec2'
             #print(construct_ec2_dict)
             construct_ec2_list.append(construct_ec2_dict)
             #print(construct_ec2_list)
@@ -61,14 +62,16 @@ def get_account_asg_list():
         resource_id_env = each_account_asg_env['ResourceId']
         if resource_id_env in construct_asg_list_service:
             construct_asg_dict = {}
-            construct_asg_dict['ASG'] = resource_id_env
+            construct_asg_dict['id'] = resource_id_env
+            construct_asg_dict['name'] = resource_id_env
+            construct_asg_dict['resource'] = 'asg'
             #print(construct_asg_dict)
             construct_asg_list.append(construct_asg_dict)
     #print(construct_asg_list)
     return construct_asg_list
 
 def put_item_to_table(r):
-    table = dynamores.Table('accountPF_ec2')
+    table = dynamores.Table('accountPF_prod')
     for each_item in r:
         object_dumps = json.dumps(each_item)
         body = json.loads(object_dumps)
@@ -93,6 +96,7 @@ if __name__ == "__main__":
         #print(result_ec2)
         #print(result_asg)
         put_item_to_table(result_ec2)
+        put_item_to_table(result_asg)
         #print('done')
     # except:
         # print('error')
