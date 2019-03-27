@@ -1,24 +1,50 @@
 import boto3
 import time
+import logging
+from botocore.exceptions import ClientError
+from datetime import datetime
 
 start = time.time()
-s3_client = boto3.client('s3')
+s3_res = boto3.resource('s3')
+
 def lambda_handler(event, context):
-    print('Logging started')
-    SourceBucket = 'flatfilesupload'
-    TargetBucket = 'flatfilestorage2'
-    
-    response = s3_client.list_objects(
-        Bucket = SourceBucket,
-        Prefix = 'new/')
-    key = response['Contents']
-    enum_key = list(enumerate(key))
-    
-    for index, elem in enum_key:
-        file = elem['Key']
-        # print(file)
-        copy_source = {'Bucket':SourceBucket, 'Key':file}
-        s3_client.copy_object(Bucket=TargetBucket, Key=file, CopySource=copy_source)
-    print('Logging ended')
+
+    now = datetime.now()
+    month = str(now.month)
+    day = str(now.day)
+    hour = str(now.hour)
+    min = str(now.minute)
+    sec = str(now.second)
+
+    LogginID = '[' + month+day+hour+min+sec + ']'
+    print(LogginID + 'Logging started')
+
+    SourceBucketName = 'flatfilesupload'
+    TargetBucketName = 'flatfilestorage2'
+    SourceBucket = s3_res.Bucket(SourceBucketName)
+    TargetBucket = s3_res.Bucket(TargetBucketName)
+    KeyList = []
+
+    try:
+        SourceObjs = SourceBucket.objects.filter(Prefix='new/')
+        for SourceObj in SourceObjs:
+            KeyList.append(SourceObj.key)
+        if len(KeyList) == 0:
+            print('No Object Found')
+        else:
+            # print(SourceObj.key)
+            StrSourceObj = str(SourceObj.key)
+            copy_source = {
+                'Bucket': SourceBucketName,
+                'Key': StrSourceObj
+            }
+            TargetObj = TargetBucket.Object(StrSourceObj)
+            TargetObj.copy(copy_source)
+        print(str(KeyList))
+    except ClientError as e:
+        logging.error(e)
+
+    print(LogginID + 'Logging ended')
     end = time.time()
-    print(round(end-start, 3))
+    TimeSpent = str(round(end-start, 3))
+    print(LogginID + '' + TimeSpent)
