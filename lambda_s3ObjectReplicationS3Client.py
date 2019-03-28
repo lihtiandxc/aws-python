@@ -2,7 +2,7 @@ import boto3
 import time
 import logging
 from datetime import datetime
-from botocore.exceptions import ClientError
+# from botocore.exceptions import ClientError
 
 
 start = time.time()
@@ -21,8 +21,8 @@ def lambda_handler(event, context):
     
     print(LogginID + 'Logging started')
     
-    SourceBucket = 'flatfilesupload'
-    TargetBucket = 'flatfilestorage2'
+    SourceBucket = 'limliht-pli'
+    TargetBucket = 'limliht-pli2'
     KeyList = []
     
     response = s3_client.list_objects(
@@ -42,7 +42,8 @@ def lambda_handler(event, context):
         file = str(elem['Key'])
         KeyList.append(file)
         copy_source = {'Bucket':SourceBucket, 'Key':file}
-        s3_client.copy_object(Bucket=TargetBucket, Key=file, CopySource=copy_source)
+        copy = s3_client.copy_object(Bucket=TargetBucket, Key=file, CopySource=copy_source)
+        print(copy) # this will show the metadata of the copy action
     print(KeyList)
     
     print(LogginID + 'Logging ended')
